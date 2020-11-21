@@ -38,15 +38,18 @@ import android.widget.ImageView;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasCameraPermission = false;
+    private boolean imageSeted = false;
     public static final int QNOTA_CAMERA_REQUEST = 2303;
     public static final String ALLOW_KEY = "ALLOWED";
     public static final String CAMERA_PREF = "camera_pref";
+    private Bitmap image = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,28 +135,28 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            Bitmap rotatedBitmap = null;
             switch(orientation) {
                 case ExifInterface.ORIENTATION_ROTATE_90:
-                    rotatedBitmap = rotateImage(imageBitmap, 90);
+                    image = rotateImage(imageBitmap, 90);
                     break;
 
                 case ExifInterface.ORIENTATION_ROTATE_180:
-                    rotatedBitmap = rotateImage(imageBitmap, 180);
+                    image = rotateImage(imageBitmap, 180);
                     break;
 
                 case ExifInterface.ORIENTATION_ROTATE_270:
-                    rotatedBitmap = rotateImage(imageBitmap, 270);
+                    image = rotateImage(imageBitmap, 270);
                     break;
 
                 case ExifInterface.ORIENTATION_NORMAL:
                 default:
-                    rotatedBitmap = imageBitmap;
+                    image = imageBitmap;
             }
 
             ImageView imageView = findViewById(R.id.imageView);
 
-            imageView.setImageBitmap(rotatedBitmap);
+            imageView.setImageBitmap(image);
+            imageSeted = true;
 
             //Snackbar.make(view, "Class: " + extras.toString(), Snackbar.LENGTH_LONG)
             //        .setAction("Action", null).show();
@@ -327,6 +330,31 @@ public class MainActivity extends AppCompatActivity {
         if (intent.resolveActivity(getPackageManager()) != null) {
             //startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
             System.out.println("TESTE2");
+        }
+    }
+
+    private void shareImage(View view) {
+        if(image == null){
+            Snackbar.make(view, "Select an image first", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+            return;
+        }
+
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType("image/jpeg");
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        try {
+            File f = File.createTempFile("sharedImage", "jpg", getExternalCacheDir());
+            Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+            share.setType("image/jpeg");
+            share.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(f));
+            //sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Subject Here");
+            //sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
+
+            startActivity(Intent.createChooser(share, "Share Image"));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
