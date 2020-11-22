@@ -29,6 +29,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
         android:contentDescription="@string/captured_image"
-        app:srcCompat="@android:drawable/ic_dialog_email" />
+        app:backgroundTint="?attr/colorSecondary"
+        app:srcCompat="@drawable/ic_baseline_photo_camera_24" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

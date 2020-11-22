@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#E8FFFF"
     tools:context=".FirstFragment">
 
     <ImageView
@@ -13,10 +14,10 @@
         android:layout_gravity="center"
         android:layout_weight="1"
         android:contentDescription="@string/capture"
-        android:src="@drawable/ic_baseline_image_search_24"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_baseline_image_search_24" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

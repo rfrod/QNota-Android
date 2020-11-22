@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.hardware.Camera;
@@ -23,9 +24,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.ShareActionProvider;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+import androidx.core.view.MenuItemCompat;
 
 import android.provider.MediaStore;
 import android.provider.Settings;
@@ -33,19 +37,20 @@ import android.view.View;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasCameraPermission = false;
     private boolean imageSeted = false;
+    private ShareActionProvider shareActionProvider;
     public static final int QNOTA_CAMERA_REQUEST = 2303;
     public static final String ALLOW_KEY = "ALLOWED";
     public static final String CAMERA_PREF = "camera_pref";
@@ -78,10 +83,12 @@ public class MainActivity extends AppCompatActivity {
         //requestCameraPermission();
     }
 
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
         return true;
     }
 
@@ -92,8 +99,9 @@ public class MainActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if(id == R.id.action_share){
+            shareImageIntent(null);
+            System.out.println("Teste1");
             return true;
         }
 
@@ -322,40 +330,67 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openCamera() {
-        //Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
-        //startActivity(intent);
-        System.out.println("TESTE1");
+
         if (intent.resolveActivity(getPackageManager()) != null) {
             //startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
             System.out.println("TESTE2");
         }
     }
 
-    private void shareImage(View view) {
+    private Intent shareImageIntent(View view) {
         if(image == null){
+            if(view == null) {
+                final ViewGroup viewGroup = (ViewGroup) ((ViewGroup) this
+                        .findViewById(android.R.id.content)).getChildAt(0);
+                view = viewGroup;
+            }
             Snackbar.make(view, "Select an image first", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
-            return;
+            System.out.println("Teste2");
+            return null;
         }
-
+        System.out.println("Teste3");
         Intent share = new Intent(Intent.ACTION_SEND);
         share.setType("image/jpeg");
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         image.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
         try {
-            File f = File.createTempFile("sharedImage", "jpg", getExternalCacheDir());
-            Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
-            share.setType("image/jpeg");
-            share.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(f));
-            //sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Subject Here");
-            //sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
+            File f = File.createTempFile("sharedImage", ".jpg", getCacheDir());
 
-            startActivity(Intent.createChooser(share, "Share Image"));
+            try {
+                f.createNewFile();
+                FileOutputStream fo = new FileOutputStream(f);
+                fo.write(bytes.toByteArray());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            Uri photoURI = FileProvider.getUriForFile(this,
+                    this.getApplicationContext().getPackageName() + ".fileprovider", f);
+
+            Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+
+            share.setType("image/jpeg");
+            share.putExtra(Intent.EXTRA_STREAM, photoURI);
+            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            share.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+            Intent chooser = Intent.createChooser(share, "Share Image");
+
+            List<ResolveInfo> resInfoList = this.getPackageManager().queryIntentActivities(chooser, PackageManager.MATCH_DEFAULT_ONLY);
+
+            for (ResolveInfo resolveInfo : resInfoList) {
+                String packageName = resolveInfo.activityInfo.packageName;
+                this.grantUriPermission(packageName, photoURI, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+
+            startActivity(chooser);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return share;
     }
 
 }
