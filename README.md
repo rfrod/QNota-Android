@@ -1,5 +1,7 @@
 # QNota-Android
 
+<img src="app/src/main/res/mipmap-hdpi/ic_launcher.png" width="40" height="40">
+
 Front-end of Android APP to help visually impaired people to use the cellphone camera to detect a money bill value.
 
 <table><tr>
